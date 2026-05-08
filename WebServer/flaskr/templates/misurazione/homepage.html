@@ -11,7 +11,7 @@
 
 <div class="row g-4">
 
-    <!-- SINISTRA: MISURAZIONE -->
+    <!-- SINISTRA: BPM LIVE -->
     <div class="col-12 col-lg-6">
         <div class="card shadow p-4 text-center">
 
@@ -19,21 +19,21 @@
                 --- BPM
             </div>
 
-            <form method="POST" action="{{ url_for('homepage') }}">
-                <input type="hidden" id="input_medi" name="bpm_medi">
-                <input type="hidden" id="input_massimi" name="bpm_massimi">
-                <input type="hidden" id="input_minimi" name="bpm_minimi">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span id="timer" class="badge bg-secondary">--</span>
+            </div>
 
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span id="timer" class="badge bg-secondary">0s</span>
-                </div>
+            <div class="d-flex gap-2 justify-content-center flex-wrap">
+                <button type="button" class="btn btn-success" id="btnAvvio" onclick="start()">Avvio</button>
+                <button type="button" class="btn btn-warning" onclick="stop()">Stop</button>
+                <button type="button" class="btn btn-primary d-none" id="btnSalva" onclick="salva()">
+                    💾 Salva
+                </button>
+            </div>
 
-                <div class="d-flex gap-2 justify-content-center flex-wrap">
-                    <button type="button" class="btn btn-success" onclick="start()">Avvio</button>
-                    <button type="button" class="btn btn-warning" onclick="stop()">Stop</button>
-                    <button type="submit" class="btn btn-primary">Salva</button>
-                </div>
-            </form>
+            <div id="salvato" class="alert alert-success mt-3 d-none">
+                ✅ Misurazione salvata in cronologia!
+            </div>
 
         </div>
     </div>
@@ -50,71 +50,151 @@
 
             <h5 id="resultStatus"></h5>
 
+            <div id="resultDetails" class="d-none mt-3">
+                <table class="table table-sm table-bordered">
+                    <tbody>
+                        <tr><th>❤️ Max</th><td id="detMax">-</td></tr>
+                        <tr><th>💙 Medio</th><td id="detMedi">-</td></tr>
+                        <tr><th>💚 Min</th><td id="detMin">-</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
         </div>
     </div>
 
 </div>
 
+<!-- SOCKETIO -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
 <script>
+const socket = io();
+
+// dati dell'ultima misurazione, usati dal bottone Salva
+let ultimaMisurazione = null;
+
+// entra nella stanza utente
+socket.emit("join", {
+    user_id: "{{ g.user.id }}"
+});
+
+let timer = 0;
 let interval = null;
-let time = 0;
-let readings = [];
 
+// ───── BPM LIVE ─────
+socket.on("bpm_live", function(data) {
+    document.getElementById("bpm").innerText = data.bpm > 0 ? data.bpm + " BPM" : "--- BPM";
+    document.getElementById("timer").innerText = data.stato;
+});
+
+// ───── RISULTATO FINALE ─────
+socket.on("misura_completata", function(data) {
+    clearInterval(interval);
+    interval = null;
+
+    ultimaMisurazione = {
+        bpm_max:  data.bpmMax,
+        bpm_medi: data.bpmMedi,
+        bpm_min:  data.bpmMin
+    };
+
+    document.getElementById("bpm").innerText =
+        `Max: ${data.bpmMax} | Med: ${data.bpmMedi} | Min: ${data.bpmMin}`;
+
+    // Mostra dettagli nella tabella
+    document.getElementById("detMax").innerText  = data.bpmMax + " BPM";
+    document.getElementById("detMedi").innerText = data.bpmMedi + " BPM";
+    document.getElementById("detMin").innerText  = data.bpmMin + " BPM";
+    document.getElementById("resultDetails").classList.remove("d-none");
+
+    checkBPM(data.bpmMax, data.bpmMedi, data.bpmMin);
+
+    // Mostra bottone Salva, nascondi alert salvato precedente
+    document.getElementById("btnSalva").classList.remove("d-none");
+    document.getElementById("salvato").classList.add("d-none");
+});
+
+// ───── START MISURAZIONE ─────
 function start() {
-    if (interval) return;
+    // Reset UI
+    ultimaMisurazione = null;
+    document.getElementById("btnSalva").classList.add("d-none");
+    document.getElementById("salvato").classList.add("d-none");
+    document.getElementById("resultDetails").classList.add("d-none");
+    document.getElementById("resultText").innerText = "Misurazione in corso...";
+    document.getElementById("resultStatus").innerText = "";
 
-    readings = [];
-    time = 0;
+    fetch("/web/avvia_misurazione", { method: "POST" });
+
+    timer = 0;
+
+    if (interval) clearInterval(interval);
 
     interval = setInterval(() => {
-        time++;
-
-        document.getElementById("timer").innerText = time + "s";
-
-        let bpm = Math.floor(Math.random() * 40) + 60;
-        readings.push(bpm);
-
-        document.getElementById("bpm").innerText = bpm + " BPM";
-
-        if (time >= 20) stop();
-
+        timer++;
+        document.getElementById("timer").innerText = timer + "s";
+        if (timer >= 20) {
+            clearInterval(interval);
+            interval = null;
+        }
     }, 1000);
 }
 
+// ───── STOP UI ─────
 function stop() {
     clearInterval(interval);
     interval = null;
 
-    if (readings.length === 0) return;
-
-    const max  = Math.max(...readings);
-    const min  = Math.min(...readings);
-    const medi = Math.round(readings.reduce((a,b) => a+b, 0) / readings.length);
-
-    document.getElementById("input_massimi").value = max;
-    document.getElementById("input_minimi").value  = min;
-    document.getElementById("input_medi").value    = medi;
-
-    document.getElementById("bpm").innerText =
-        `Max: ${max} | Med: ${medi} | Min: ${min}`;
-
-    checkBPM(max, medi, min);
+    document.getElementById("bpm").innerText = "--- BPM";
+    document.getElementById("timer").innerText = "--";
+    document.getElementById("btnSalva").classList.add("d-none");
+    document.getElementById("resultDetails").classList.add("d-none");
+    document.getElementById("resultText").innerText = "Avvia una misurazione per vedere il risultato.";
+    document.getElementById("resultStatus").innerText = "";
+    ultimaMisurazione = null;
 }
 
+// ───── SALVA MISURAZIONE ─────
+function salva() {
+    if (!ultimaMisurazione) {
+        alert("Nessuna misurazione da salvare.");
+        return;
+    }
+
+    fetch("/web/salva_misurazione", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ultimaMisurazione)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            document.getElementById("btnSalva").classList.add("d-none");
+            document.getElementById("salvato").classList.remove("d-none");
+        } else {
+            alert("Errore nel salvataggio: " + (data.error || "sconosciuto"));
+        }
+    })
+    .catch(() => alert("Errore di rete."));
+}
+
+// ───── ANALISI BPM ─────
 function checkBPM(max, med, min) {
+
     let text = "";
     let status = "";
 
-    if (med >= 60 && med <= 100 && max < 100) {
-        text = "Il tuo battito è nella norma.";
+    if (med >= 60 && med <= 100) {
+        text = "Battito nella norma";
         status = "🟢 NORMALE";
     }
-    else if ((med >= 50 && med < 60) || (med > 100 && med <= 120)) {
-        text = "Battito leggermente irregolare.";
+    else if (med < 60) {
+        text = "Battito troppo basso";
         status = "🟡 ATTENZIONE";
     }
     else {
-        text = "Battito fuori norma.";
+        text = "Battito troppo alto";
         status = "🔴 CRITICO";
     }
 

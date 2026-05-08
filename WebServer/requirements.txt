@@ -2,3 +2,5 @@ flask
 flask-sqlalchemy
 werkzeug
 psycopg2-binary
+eventlet
+flask-socketio

@@ -1,202 +1,261 @@
+import wifi
+import ujson
+import urequests
+import time
 from machine import I2C, Pin
 from max30102 import MAX30102
-import time
 
+# ── CONFIGURAZIONE ─────────────────────────────────────────────────────────────
+FLASK_URL = "http://192.168.1.2:5000"
+
+API_TOKEN = "92740f2032f70de06443a3817b5de5eb976b0adb208a559fabee78207aad098e"
+
+HEADERS = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + API_TOKEN,
+}
+
+SECONDI_SENZA_DITO_PER_STOP = 3
+
+DURATA_MISURAZIONE = 20
+
+# ── BOTTONE KY-004 ─────────────────────────────────────────────────────────────
+button = Pin(18, Pin.IN, Pin.PULL_UP)
+
+# ── FUNZIONI API ───────────────────────────────────────────────────────────────
+def get_comando():
+    try:
+        r = urequests.get(FLASK_URL + "/api/comando", headers=HEADERS)
+        data = r.json()
+        r.close()
+        return data.get("comando", "idle")
+    except Exception as e:
+        print("Errore comando:", e)
+        return "idle"
+
+
+def invia_bpm_live(bpm, stato="misurazione in corso..."):
+    try:
+        payload = ujson.dumps({
+            "bpm": int(bpm),
+            "stato": str(stato)
+        })
+
+        r = urequests.post(
+            FLASK_URL + "/api/bpm_live",
+            data=payload,
+            headers=HEADERS
+        )
+        r.close()
+
+    except Exception as e:
+        print("Errore BPM live:", e)
+
+
+# def invia_risultato(bpm_medi, bpm_max, bpm_min):
+#     try:
+#         # Forza interi puri con // per evitare float nel JSON su MicroPython
+#         payload = ujson.dumps({
+#             "bpm_medi": bpm_medi // 1,
+#             "bpm_max":  bpm_max  // 1,
+#             "bpm_min":  bpm_min  // 1,
+#         })
+
+#         print("Invio payload:", payload)
+
+#         r = urequests.post(
+#             FLASK_URL + "/api/misura",
+#             data=payload,
+#             headers=HEADERS
+#         )
+
+#         data = r.json()
+#         r.close()
+
+#         if data.get("ok"):
+#             print("Risultato salvato!")
+#         else:
+#             print("Errore server:", data)
+
+#     except Exception as e:
+#         print("Errore invio risultato:", e)
+
+
+def invia_risultato(bpm_medi, bpm_max, bpm_min):
+    try:
+        payload = ujson.dumps({
+            "bpm_medi": bpm_medi // 1,
+            "bpm_max":  bpm_max  // 1,
+            "bpm_min":  bpm_min  // 1,
+        })
+
+        print("Payload:", payload)
+
+        r = urequests.post(
+            FLASK_URL + "/api/misura",
+            data=payload,
+            headers=HEADERS
+        )
+
+        print("Status:", r.status_code)
+        print("Risposta:", r.text)
+
+        r.close()
+
+    except Exception as e:
+        print("Errore invio risultato:", e)
+
+
+# ── MISURAZIONE BPM ────────────────────────────────────────────────────────────
+def misura_bpm(sensor):
+
+    history = []
+    bpm_list = []
+
+    last_beat_time = 0
+
+    tempo_senza_dito = 0
+    finger_on = False
+
+    start_time = 0
+
+    print("Metti il dito sul sensore...")
+    invia_bpm_live(0, "metti il dito sul sensore...")
+
+    while True:
+
+        sensor.check()
+
+        if sensor.sense.IR.is_empty():
+            time.sleep_ms(10)
+            continue
+
+        ir = sensor.pop_ir_from_storage()
+
+        # ── DITO ASSENTE ───────────────────────────────────────────────
+        if ir < 3000:
+
+            tempo_senza_dito += 10
+
+            if finger_on and tempo_senza_dito >= (SECONDI_SENZA_DITO_PER_STOP * 1000):
+                print("Dito rimosso. Fine misurazione.")
+                break
+
+            time.sleep_ms(10)
+            continue
+
+        # ── DITO PRESENTE ─────────────────────────────────────────────
+        tempo_senza_dito = 0
+
+        if not finger_on:
+            print("Dito rilevato! Calibrazione...")
+            finger_on = True
+
+            invia_bpm_live(0, "calibrazione in corso...")
+
+            start_time = time.ticks_ms()
+
+        # ── STOP DOPO 20 SECONDI ───────────────────────────────
+        if finger_on:
+            if time.ticks_diff(time.ticks_ms(), start_time) >= (DURATA_MISURAZIONE * 1000):
+                print("20 secondi terminati.")
+                break
+
+        history.append(ir)
+
+        if len(history) > 30:
+            history.pop(0)
+
+        avg = sum(history) / len(history)
+
+        now = time.ticks_ms()
+
+        # rilevazione battito
+        if ir > (avg + 60) and time.ticks_diff(now, last_beat_time) > 600:
+
+            if last_beat_time != 0:
+
+                delta = time.ticks_diff(now, last_beat_time)
+
+                current_bpm = 60000 / delta
+
+                if 45 < current_bpm < 160:
+
+                    bpm_list.append(current_bpm)
+
+                    if len(bpm_list) > 15:
+                        bpm_list.pop(0)
+
+                    if len(bpm_list) >= 4:
+
+                        avg_bpm = int(sum(bpm_list) / len(bpm_list))
+
+                        invia_bpm_live(avg_bpm, "misurazione in corso...")
+
+                    else:
+
+                        invia_bpm_live(
+                            0,
+                            "calibrazione " + str(len(bpm_list)) + "/4..."
+                        )
+
+            last_beat_time = now
+
+        time.sleep_ms(10)
+
+    # ── RISULTATO FINALE ─────────────────────────────────────────────
+    if len(bpm_list) < 4:
+        invia_bpm_live(0, "dati insufficienti")
+        return None
+
+    # Usa integer division // per garantire int puro su MicroPython
+    bpm_medi = int(sum(bpm_list) // len(bpm_list))
+    bpm_max  = int(max(bpm_list))
+    bpm_min  = int(min(bpm_list))
+
+    print("BPM Medio:", bpm_medi)
+
+    return bpm_medi, bpm_max, bpm_min
+
+
+# ── WIFI ──────────────────────────────────────────────────────────────────────
+rete = wifi.connetti_wifi()
+
+# ── SENSOR ────────────────────────────────────────────────────────────────────
 i2c = I2C(0, sda=Pin(21), scl=Pin(22), freq=400000)
+
 sensor = MAX30102(i2c=i2c)
 sensor.setup_sensor()
 
-# Settaggi per stabilità
 sensor.set_pulse_amplitude_red(0xFF)
 sensor.set_pulse_amplitude_it(0xFF)
+sensor.set_pulse_amplitude_green(0xFF)
+sensor.set_pulse_amplitude_proximity(0xFF)
 
-print("--- Monitor Cardiaco Professionale ---")
-print("Posiziona il dito e attendi la calibrazione...")
+print("MAX30102 inizializzato!")
 
-history = []
-last_beat_time = 0
-bpm_list = []
-finger_warning_sent = False
-
+# ── LOOP PRINCIPALE ───────────────────────────────────────────────────────────
 while True:
-    sensor.check()
-    if not sensor.sense.IR.is_empty():
-        ir = sensor.pop_ir_from_storage()
-        
-        # Soglia dito: 3000 è più tollerante di 5000/10000
-        if ir < 3000:
-            if not finger_warning_sent:
-                print("Segnale perso. Inserire il dito...")
-                finger_warning_sent = True
-            history = []
-            bpm_list = [] # Reset dati alla rimozione
-            continue
-        
-        if finger_warning_sent:
-            print("Dito rilevato. Calibrazione in corso...")
-            finger_warning_sent = False
-            time.sleep(0.5) # Pausa tecnica per stabilizzare il sensore
 
-        history.append(ir)
-        if len(history) > 30: history.pop(0)
-        
-        avg = sum(history) / len(history)
-        now = time.ticks_ms()
-        
-        # Rilevazione battito reale con filtro temporale (600ms = max 100 BPM circa)
-        if ir > (avg + 60) and (time.ticks_diff(now, last_beat_time) > 600):
-            if last_beat_time != 0:
-                delta = time.ticks_diff(now, last_beat_time)
-                current_bpm = 60000 / delta
-                
-                # Accettiamo solo valori umani coerenti
-                if 45 < current_bpm < 160:
-                    bpm_list.append(current_bpm)
-                    if len(bpm_list) > 8: bpm_list.pop(0)
-                    
-                    # Mostra il valore solo dopo 4 battiti per evitare picchi iniziali errati
-                    if len(bpm_list) >= 4:
-                        avg_bpm = sum(bpm_list) / len(bpm_list)
-                        print(f"BPM: {int(avg_bpm)} (Stabile)")
-                    else:
-                        print("Analisi...")
-            
-            last_beat_time = now
+    comando = get_comando()
 
-    time.sleep(0.01)
+    if comando == "start" or button.value() == 0:
 
-# ---------------\------------------------------------------------------------------------------    
+        print("Avvio misurazione!")
 
-# from machine import I2C, Pin
-# i2c = I2C(0, sda=Pin(21), scl=Pin(22), freq=100000)
-# print("Indirizzi trovati:", i2c.scan())
+        time.sleep_ms(200)
 
-# ------------------------------------------------------------------------------
+        risultato = misura_bpm(sensor)
 
-# from machine import I2C, Pin
-# from max30102 import MAX30102
-# import time
+        if risultato:
+            bpm_medi, bpm_max, bpm_min = risultato
 
-# # Inizializzazione
-# i2c = I2C(0, sda=Pin(21), scl=Pin(22), freq=400000)
-# sensor = MAX30102(i2c=i2c)
-# sensor.setup_sensor()
+            invia_risultato(bpm_medi, bpm_max, bpm_min)
 
-# sensor.set_pulse_amplitude_red(0xFF)
-# sensor.set_pulse_amplitude_it(0xFF)
+        while button.value() == 0:
+            time.sleep_ms(10)
 
-# print("--- Lettura BPM REALE ---")
-# print("Appoggia il dito leggermente...")
+    else:
+        print(".", end="")
 
-# history = []
-# last_beat_time = 0
-# bpm_list = []
-# finger_warning_sent = False
-
-# while True:
-#     sensor.check()
-#     if not sensor.sense.IR.is_empty():
-#         ir = sensor.pop_ir_from_storage()
-        
-#         # 1. Controllo presenza dito (soglia 5000 per stabilità)
-#         if ir < 5000:
-#             if not finger_warning_sent:
-#                 print("Metti il dito...")
-#                 finger_warning_sent = True
-#             history = []
-#             bpm_list = []
-#             continue
-        
-#         if finger_warning_sent:
-#             print("Dito rilevato, calcolo in corso...")
-#             finger_warning_sent = False
-
-#         # 2. Gestione segnale
-#         history.append(ir)
-#         if len(history) > 30: history.pop(0)
-        
-#         avg = sum(history) / len(history)
-        
-#         # 3. Rilevazione del picco (Battito Reale)
-#         # Il valore deve superare la media + una soglia e deve essere passato almeno 500ms dall'ultimo
-#         now = time.ticks_ms()
-#         if ir > (avg + 50) and (time.ticks_diff(now, last_beat_time) > 500):
-            
-#             if last_beat_time != 0:
-#                 # Calcolo intervallo tra battiti
-#                 delta = time.ticks_diff(now, last_beat_time)
-                
-#                 # Calcolo BPM: 60000ms (1 minuto) / millisecondi tra battiti
-#                 current_bpm = 60000 / delta
-                
-#                 # Filtro valori assurdi (es. solo tra 40 e 180 BPM)
-#                 if 40 < current_bpm < 180:
-#                     bpm_list.append(current_bpm)
-#                     if len(bpm_list) > 5: bpm_list.pop(0)
-                    
-#                     # Media degli ultimi 5 battiti per stabilità
-#                     avg_bpm = sum(bpm_list) / len(bpm_list)
-#                     print(f"Battito! BPM: {int(avg_bpm)}")
-            
-#             last_beat_time = now
-
-#     time.sleep(0.01)
-
-# ------------------------------------------------------------------------------
-
-# from machine import I2C, Pin
-# from max30102 import MAX30102
-# import time
-
-# # Configurazione I2C e Sensore
-# i2c = I2C(0, sda=Pin(21), scl=Pin(22), freq=400000)
-# sensor = MAX30102(i2c=i2c)
-# sensor.setup_sensor()
-
-# # Potenza LED al massimo
-# sensor.set_pulse_amplitude_red(0xFF)
-# sensor.set_pulse_amplitude_it(0xFF)
-
-# print("--- Lettura BPM in corso... ---")
-# print("Tieni il dito molto fermo per 10 secondi")
-
-# history = []
-# start_time = time.ticks_ms()
-# finger_warning_sent = False  # Variabile di controllo per il messaggio
-
-# while True:
-#     sensor.check()
-#     if not sensor.sense.IR.is_empty():
-#         ir = sensor.pop_ir_from_storage()
-        
-#         # Controllo presenza dito
-#         if ir < 10000:
-#             if not finger_warning_sent:
-#                 print("Metti il dito...")
-#                 finger_warning_sent = True  # Blocca i messaggi successivi
-#             history = []
-#         else:
-#             # Se il dito è presente, resettiamo il flag del messaggio
-#             if finger_warning_sent:
-#                 print("Dito rilevato, attendi...")
-#                 finger_warning_sent = False
-            
-#             history.append(ir)
-#             if len(history) > 20: 
-#                 history.pop(0)
-            
-#             # Calcolo media per rilevare la variazione (battito)
-#             avg = sum(history) / len(history)
-            
-#             # Se il valore sale sopra la media (picco di pressione sanguigna)
-#             if ir > avg + 30:
-#                 now = time.ticks_ms()
-#                 diff = time.ticks_diff(now, start_time)
-                
-#                 # Mostra i BPM ogni 5 secondi (con la tua logica di oscillazione 70-76)
-#                 if diff > 5000: 
-#                     bpm = 72 + (ir % 5) 
-#                     print(f"Battito rilevato: {int(bpm)} BPM - OK")
-#                     start_time = now
-
-#     time.sleep(0.02)
+    time.sleep(0.2)
