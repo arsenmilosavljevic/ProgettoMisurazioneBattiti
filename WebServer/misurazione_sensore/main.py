@@ -6,9 +6,9 @@ from machine import I2C, Pin
 from max30102 import MAX30102
 
 # ── CONFIGURAZIONE ─────────────────────────────────────────────────────────────
-FLASK_URL = "http://192.168.1.2:5000"
+FLASK_URL = "http://192.168.5.47:5000"
 
-API_TOKEN = "92740f2032f70de06443a3817b5de5eb976b0adb208a559fabee78207aad098e"
+API_TOKEN = "d92baab3783de78e8ab16e664d533e95508b36d877473347a4b4a756924b74d4"
 
 HEADERS = {
     "Content-Type": "application/json",
@@ -17,7 +17,7 @@ HEADERS = {
 
 SECONDI_SENZA_DITO_PER_STOP = 3
 
-DURATA_MISURAZIONE = 20
+DURATA_MISURAZIONE = 30
 
 # ── BOTTONE KY-004 ─────────────────────────────────────────────────────────────
 button = Pin(18, Pin.IN, Pin.PULL_UP)
@@ -183,7 +183,7 @@ def misura_bpm(sensor):
 
                     bpm_list.append(current_bpm)
 
-                    if len(bpm_list) > 15:
+                    if len(bpm_list) > 20:
                         bpm_list.pop(0)
 
                     if len(bpm_list) >= 4:

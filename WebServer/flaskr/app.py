@@ -179,7 +179,7 @@ def avvia():
 
     threading.Thread(target=stop_after_20s, args=(g.user.id,), daemon=True).start()
 
-    return jsonify({"ok": True, "durata": 20})
+    return jsonify({"ok": True, "durata": 30})
 
 
 @app.route("/api/comando")
@@ -213,10 +213,6 @@ def bpm_live():
 
     return jsonify({"ok": True})
 
-# ─────────────────────────────
-# MISURA FINALE (da ESP32)
-# ─────────────────────────────
-
 @app.route("/api/misura", methods=["POST"])
 def misura():
     user = autentica_token()
@@ -225,23 +221,10 @@ def misura():
 
     data = request.get_json() or {}
 
-    # Salva i valori in variabili locali prima di aprire la sessione
     bpm_medi = int(data["bpm_medi"])
     bpm_max  = int(data["bpm_max"])
     bpm_min  = int(data["bpm_min"])
 
-    m = Misurazione(
-        bpmMedi=bpm_medi,
-        bpmMax=bpm_max,
-        bpmMin=bpm_min,
-        user_id=user.id
-    )
-
-    with SessionLocal() as db:
-        db.add(m)
-        db.commit()
-
-    # Usa le variabili locali, non m.bpmMedi (sessione già chiusa = DetachedInstanceError)
     socketio.emit(
         "misura_completata",
         {

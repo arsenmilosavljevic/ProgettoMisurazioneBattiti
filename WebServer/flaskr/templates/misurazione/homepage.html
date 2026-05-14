@@ -268,15 +268,22 @@ socket.on("bpm_live", function(data) {
 });
 
 // ───── RISULTATO FINALE ─────
+// DOPO
 socket.on("misura_completata", function(data) {
     clearInterval(interval); interval = null;
-    ultimaMisurazione = { bpm_max: data.bpmMax, bpm_medi: data.bpmMedi, bpm_min: data.bpmMin };
-    document.getElementById("bpm").innerText = `Max: ${data.bpmMax} | Med: ${data.bpmMedi} | Min: ${data.bpmMin}`;
-    document.getElementById("detMax").innerText  = data.bpmMax + " BPM";
-    document.getElementById("detMedi").innerText = data.bpmMedi + " BPM";
-    document.getElementById("detMin").innerText  = data.bpmMin + " BPM";
+
+    // Usa i valori del grafico se disponibili, altrimenti quelli dell'ESP32
+    const max  = sessionMax  !== null ? sessionMax  : data.bpmMax;
+    const min  = sessionMin  !== null ? sessionMin  : data.bpmMin;
+    const med  = sessionCount > 0 ? Math.round(sessionSum / sessionCount) : data.bpmMedi;
+
+    ultimaMisurazione = { bpm_max: max, bpm_medi: med, bpm_min: min };
+    document.getElementById("bpm").innerText = `Max: ${max} | Med: ${med} | Min: ${min}`;
+    document.getElementById("detMax").innerText  = max + " BPM";
+    document.getElementById("detMedi").innerText = med + " BPM";
+    document.getElementById("detMin").innerText  = min + " BPM";
     document.getElementById("resultDetails").classList.remove("d-none");
-    checkBPM(data.bpmMax, data.bpmMedi, data.bpmMin);
+    checkBPM(max, med, min);
     document.getElementById("btnSalva").classList.remove("d-none");
     document.getElementById("salvato").classList.add("d-none");
 });
