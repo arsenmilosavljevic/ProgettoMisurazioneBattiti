@@ -1,11 +1,10 @@
-#container basato su oython 3.13
-FROM python:3.14
-
-#locazione di lavoro
+FROM python:3.12-slim
+ 
 WORKDIR /app
-
-#copia dei file del progetto nel container
-COPY . /app
-
-#librerie del progetto
-RUN pip install --no-cache-dir flask cryptography sqlalchemy pymysql requests
+ 
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+ 
+COPY . .
+ 
+CMD ["python", "flaskr/app.py"]
