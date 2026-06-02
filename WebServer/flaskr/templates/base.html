@@ -139,6 +139,12 @@
             box-shadow: 0 2px 12px rgba(0,0,0,0.05);
         }
 
+
+        .navbar .nav-link {
+          font-size: 0.82rem;
+          padding: 0.25rem 0.6rem !important;
+        }
+
         /* ── FOOTER ── */
         footer {
             border-top: 1px solid var(--border);
@@ -162,7 +168,7 @@
 
     <!-- Sinistra: Solo il Brand -->
     <a class="navbar-brand" href="{{ url_for('index') }}">
-      <span class="heart">❤️</span> BattitiCardiaci
+      <span class="heart">❤️</span> Health Tracker
     </a>
 
     <!-- Pulsante Hamburgermenu per Mobile -->
@@ -172,8 +178,8 @@
     </button>
 
     <!-- Destra: Menu di navigazione completo -->
-    <div class="collapse navbar-collapse" id="navbarContent">
-      <ul class="navbar-nav ms-auto align-items-center gap-2">
+    <div class="collapse navbar-collapse justify-content-end" id="navbarContent">
+      <ul class="navbar-nav d-flex align-items-center gap-1 ms-auto">
         {% if g.user %}
           <!-- Link Home -->
           <li class="nav-item">
@@ -187,7 +193,7 @@
           
           <!-- Link Profilo -->
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'profilo' %}active bg-secondary bg-opacity-10 fw-bold{% endif %}" href="{{ url_for('profilo') }}">🔑 Profilo</a>
+            <a class="nav-link {% if request.endpoint == 'profilo' %}active bg-secondary bg-opacity-10 fw-bold{% endif %}" href="{{ url_for('profilo') }}">Profilo</a>
           </li>
           
           <!-- Avatar + nome utente -->
