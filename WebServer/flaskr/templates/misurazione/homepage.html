@@ -2,117 +2,227 @@
 
 {% block title %}Home{% endblock %}
 
+{% block extra_head %}
+<style>
+        :root {
+            --bg:      #f4f6f9;
+            --bg-card: #ffffff;
+            --border:  rgba(0,0,0,0.08);
+            --red:     #e8394d;
+            --red-dim: rgba(232,57,77,0.1);
+            --blue:    #3b82f6;
+            --green:   #22c55e;
+            --text:    #111827;
+            --muted:   #6b7280;
+        }
+
+    /* ── BPM DISPLAY ── */
+    .bpm-display {
+        font-size: 3.5rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: var(--red);
+        line-height: 1;
+        font-family: 'DM Mono', monospace;
+    }
+
+    .stato-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 0.25rem 0.85rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+        font-family: 'DM Mono', monospace;
+    }
+
+    /* ── BOTTONI ── */
+    .btn-save {
+        background: var(--red);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 0.5rem 1.4rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: box-shadow 0.2s, transform 0.1s;
+    }
+    .btn-save:hover {
+        box-shadow: 0 0 20px rgba(232,57,77,0.5);
+        transform: translateY(-1px);
+        color: #fff;
+    }
+
+    .btn-home {
+        background: rgba(255,255,255,0.05);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.5rem 1.4rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+        text-decoration: none;
+    }
+    .btn-home:hover {
+        background: rgba(255,255,255,0.1);
+        color: var(--text);
+    }
+
+    /* ── RESULT CARD ── */
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .status-normale { background: rgba(52,208,127,0.15); color: var(--green); border: 1px solid rgba(52,208,127,0.3); }
+    .status-basso   { background: rgba(255,193,7,0.15);  color: #ffc107;      border: 1px solid rgba(255,193,7,0.3); }
+    .status-critico { background: var(--red-dim);        color: var(--red);   border: 1px solid rgba(232,57,77,0.3); }
+
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.65rem 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+    }
+    .metric-row:last-child { border-bottom: none; }
+    .metric-label { color: var(--muted); }
+    .metric-val   { font-family: 'DM Mono', monospace; font-weight: 600; }
+
+    /* ── CHART CARD ── */
+    .chart-legend span {
+        font-size: 0.78rem;
+        color: var(--muted);
+    }
+
+    .stat-chip {
+        padding: 0.3rem 0.75rem;
+        border-radius: 8px;
+        font-family: 'DM Mono', monospace;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    /* ── HEARTBEAT ANIM ── */
+    @keyframes heartbeat {
+        0%,100% { transform: scale(1); }
+        15%      { transform: scale(1.35); }
+        30%      { transform: scale(1); }
+        45%      { transform: scale(1.2); }
+        60%      { transform: scale(1); }
+    }
+    .beating { animation: heartbeat 0.8s ease-in-out; }
+
+    /* ── ALERT SALVATO ── */
+    .alert-saved {
+        background: rgba(52,208,127,0.1);
+        border: 1px solid rgba(52,208,127,0.3);
+        color: var(--green);
+        border-radius: 10px;
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
 {% block header %}
-<h1 class="display-5">Ciao, {{ username }}</h1>
-<p class="text-muted">Benvenuto nel sistema di monitoraggio battiti cardiaci</p>
+<h1 style="font-size:2rem; font-weight:700; letter-spacing:-0.03em; color: var(--text);">
+    Ciao, <span style="color: var(--red);">{{ username }}</span>
+</h1>
+<p style="color: var(--muted); font-size:0.9rem; margin-top:0.3rem;">
+    Monitoraggio battiti cardiaci in tempo reale
+</p>
 {% endblock %}
 
 {% block content %}
-
 <div class="row g-4">
 
     <!-- SINISTRA: BPM LIVE -->
     <div class="col-12 col-lg-6">
-        <div class="card shadow p-4 text-center">
-            <div id="bpm" class="display-6 text-primary mb-3">--- BPM</div>
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <span id="timer" class="badge bg-secondary">--</span>
+        <div class="card p-4 text-center" style="min-height: 180px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem;">
+            <div class="bpm-display" id="bpm">--- BPM</div>
+            <div class="stato-badge" id="timer">in attesa...</div>
+            <div class="d-flex gap-2 justify-content-center flex-wrap mt-1">
+                <button class="btn-save d-none" id="btnSalva" onclick="salva()">💾 Salva</button>
+                <a href="{{ url_for('homepage') }}" class="btn-home d-none" id="btnHome">🏠 Home</a>
             </div>
-            <div class="d-flex gap-2 justify-content-center flex-wrap">
-                <button type="button" class="btn btn-success" onclick="start()">Avvio</button>
-                <button type="button" class="btn btn-warning" onclick="stop()">Stop</button>
-                <button type="button" class="btn btn-primary d-none" id="btnSalva" onclick="salva()">💾 Salva</button>
-            </div>
-            <div id="salvato" class="alert alert-success mt-3 d-none">
-                ✅ Misurazione salvata in cronologia!
+            <div class="alert-saved d-none" id="salvato">✅ Misurazione salvata!</div>
+            <!-- Risultato finale sotto i bottoni -->
+            <div id="resultDetails" class="d-none mt-3 w-100">
+                <div class="metric-row">
+                    <span class="metric-label">❤️ Max</span>
+                    <span class="metric-val" style="color:var(--red); font-family:var(--mono);" id="detMax">—</span>
+
+                    <span class="metric-label">💙 Medio</span>
+                    <span class="metric-val" style="color:var(--blue); font-family:var(--mono);" id="detMedi">—</span>
+
+                    <span class="metric-label">💚 Min</span>
+                    <span class="metric-val" style="color:var(--green); font-family:var(--mono);" id="detMin">—</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- DESTRA: RISULTATO -->
-    <div class="col-12 col-lg-6">
-        <div class="card shadow p-4">
-            <h4 class="mb-3">Stato del tuo battito</h4>
-            <p id="resultText" class="text-muted">Avvia una misurazione per vedere il risultato.</p>
-            <h5 id="resultStatus"></h5>
-            <div id="resultDetails" class="d-none mt-3">
-                <table class="table table-sm table-bordered">
-                    <tbody>
-                        <tr><th>❤️ Max</th><td id="detMax">-</td></tr>
-                        <tr><th>💙 Medio</th><td id="detMedi">-</td></tr>
-                        <tr><th>💚 Min</th><td id="detMin">-</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    
 
-    <!-- GRAFICO BPM LIVE -->
+    <!-- GRAFICO -->
     <div class="col-12">
-        <div class="card shadow p-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h4 class="mb-0">
-                    <span id="heartIcon" style="display:inline-block;">❤️</span>
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div style="display:flex; align-items:center; gap:0.5rem; font-weight:600;">
+                    <span id="heartIcon" style="display:inline-block; font-size:1.2rem;">❤️</span>
                     Grafico BPM in tempo reale
-                </h4>
-                <div class="d-flex gap-3 small text-muted">
+                </div>
+                <div class="d-flex gap-3 chart-legend">
                     <span>🟢 Normale (60–100)</span>
                     <span>🟡 Basso (&lt;60)</span>
                     <span>🔴 Alto (&gt;100)</span>
                 </div>
             </div>
 
-            <!-- Stats live sopra il grafico -->
-            <div class="d-flex gap-3 mb-3" id="chartStats" style="display:none!important;">
-                <span class="badge bg-danger fs-6" id="statMax">Max: --</span>
-                <span class="badge bg-primary fs-6" id="statMed">Med: --</span>
-                <span class="badge bg-success fs-6" id="statMin">Min: --</span>
+            <div class="d-flex gap-2 mb-3" id="chartStats" style="display:none!important;">
+                <span class="stat-chip" id="statMax" style="background:rgba(232,57,77,0.15); color:var(--red);">Max: --</span>
+                <span class="stat-chip" id="statMed" style="background:rgba(77,159,255,0.15); color:var(--blue);">Med: --</span>
+                <span class="stat-chip" id="statMin" style="background:rgba(52,208,127,0.15); color:var(--green);">Min: --</span>
             </div>
 
-            <canvas id="bpmChart" height="300"></canvas>
+            <canvas id="bpmChart" height="280"></canvas>
         </div>
     </div>
 
 </div>
 
-<style>
-@keyframes heartbeat {
-    0%   { transform: scale(1); }
-    15%  { transform: scale(1.35); }
-    30%  { transform: scale(1); }
-    45%  { transform: scale(1.2); }
-    60%  { transform: scale(1); }
-    100% { transform: scale(1); }
-}
-.beating { animation: heartbeat 0.8s ease-in-out; }
-</style>
-
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-
 <script>
 const socket = io();
 let ultimaMisurazione = null;
 socket.emit("join", { user_id: "{{ g.user.id }}" });
 
-let timer = 0;
 let interval = null;
 
-// ───── GRAFICO ─────
+// ── CHART ──
 const MAX_PUNTI = 30;
 const ctx = document.getElementById('bpmChart').getContext('2d');
 
-// Colore dinamico in base al BPM
 function getBpmColor(bpm) {
-    if (bpm < 60)  return 'rgba(255, 193, 7, 1)';   // giallo
-    if (bpm > 100) return 'rgba(220, 53, 69, 1)';   // rosso
-    return 'rgba(25, 135, 84, 1)';                  // verde
+    if (bpm < 60)  return 'rgba(255,193,7,1)';
+    if (bpm > 100) return 'rgba(232,57,77,1)';
+    return 'rgba(52,208,127,1)';
 }
 function getBpmBg(bpm) {
-    if (bpm < 60)  return 'rgba(255, 193, 7, 0.15)';
-    if (bpm > 100) return 'rgba(220, 53, 69, 0.15)';
-    return 'rgba(25, 135, 84, 0.15)';
+    if (bpm < 60)  return 'rgba(255,193,7,0.08)';
+    if (bpm > 100) return 'rgba(232,57,77,0.08)';
+    return 'rgba(52,208,127,0.08)';
 }
 
 const bpmChart = new Chart(ctx, {
@@ -122,9 +232,9 @@ const bpmChart = new Chart(ctx, {
         datasets: [{
             label: 'BPM',
             data: [],
-            borderColor: 'rgba(25, 135, 84, 1)',
-            backgroundColor: 'rgba(25, 135, 84, 0.15)',
-            borderWidth: 2.5,
+            borderColor: 'rgba(52,208,127,1)',
+            backgroundColor: 'rgba(52,208,127,0.08)',
+            borderWidth: 2,
             pointRadius: 4,
             pointBackgroundColor: [],
             pointBorderColor: [],
@@ -133,62 +243,47 @@ const bpmChart = new Chart(ctx, {
         }]
     },
     options: {
-        animation: { duration: 400 },
+        animation: { duration: 350 },
         scales: {
             x: {
-                title: { display: true, text: 'Campioni' },
-                grid: { color: 'rgba(0,0,0,0.05)' }
+                title: { display: true, text: 'Campioni', color: '#9ca3af' },
+                grid:  { color: 'rgba(0,0,0,0.06)' },
+                ticks: { color: '#9ca3af' }
             },
             y: {
-                min: 35,
-                max: 185,
-                title: { display: true, text: 'BPM' },
-                ticks: { stepSize: 20 },
-                grid: { color: 'rgba(0,0,0,0.05)' }
+                min: 35, max: 185,
+                title: { display: true, text: 'BPM', color: '#9ca3af' },
+                ticks: { stepSize: 20, color: '#9ca3af' },
+                grid:  { color: 'rgba(0,0,0,0.06)' }
             }
         },
         plugins: {
             legend: { display: false },
             tooltip: {
+                backgroundColor: '#fff',
+                borderColor: 'rgba(0,0,0,0.1)',
+                borderWidth: 1,
+                titleColor: '#111827',
+                bodyColor: '#6b7280',
                 callbacks: {
                     label: c => {
                         const v = c.parsed.y;
-                        const zona = v < 60 ? '🟡 Basso' : v > 100 ? '🔴 Alto' : '🟢 Normale';
-                        return ` ${v} BPM — ${zona}`;
+                        const z = v < 60 ? '🟡 Basso' : v > 100 ? '🔴 Alto' : '🟢 Normale';
+                        return ` ${v} BPM — ${z}`;
                     }
                 }
             },
             annotation: {
                 annotations: {
-                    zonaNormaleMin: {
-                        type: 'line',
-                        yMin: 60, yMax: 60,
-                        borderColor: 'rgba(25,135,84,0.5)',
-                        borderWidth: 1.5,
-                        borderDash: [6, 4],
-                        label: {
-                            display: true,
-                            content: '60 BPM (min normale)',
-                            position: 'start',
-                            color: 'rgba(25,135,84,0.8)',
-                            font: { size: 11 },
-                            backgroundColor: 'transparent'
-                        }
+                    lineMin: {
+                        type: 'line', yMin: 60, yMax: 60,
+                        borderColor: 'rgba(52,208,127,0.4)', borderWidth: 1.5, borderDash: [6,4],
+                        label: { display: true, content: '60 BPM', position: 'start', color: 'rgba(52,208,127,0.7)', font: { size: 10 }, backgroundColor: 'transparent' }
                     },
-                    zonaNormaleMax: {
-                        type: 'line',
-                        yMin: 100, yMax: 100,
-                        borderColor: 'rgba(220,53,69,0.5)',
-                        borderWidth: 1.5,
-                        borderDash: [6, 4],
-                        label: {
-                            display: true,
-                            content: '100 BPM (max normale)',
-                            position: 'start',
-                            color: 'rgba(220,53,69,0.8)',
-                            font: { size: 11 },
-                            backgroundColor: 'transparent'
-                        }
+                    lineMax: {
+                        type: 'line', yMin: 100, yMax: 100,
+                        borderColor: 'rgba(232,57,77,0.4)', borderWidth: 1.5, borderDash: [6,4],
+                        label: { display: true, content: '100 BPM', position: 'start', color: 'rgba(232,57,77,0.7)', font: { size: 10 }, backgroundColor: 'transparent' }
                     }
                 }
             }
@@ -202,12 +297,9 @@ let sessionMax = null, sessionMin = null, sessionSum = 0, sessionCount = 0;
 function aggiungiPuntoGrafico(bpm) {
     if (bpm <= 0) return;
     campione++;
-
-    // Aggiorna stats
     if (sessionMax === null || bpm > sessionMax) sessionMax = bpm;
     if (sessionMin === null || bpm < sessionMin) sessionMin = bpm;
-    sessionSum += bpm;
-    sessionCount++;
+    sessionSum += bpm; sessionCount++;
     const med = Math.round(sessionSum / sessionCount);
 
     document.getElementById('chartStats').style.removeProperty('display');
@@ -215,15 +307,11 @@ function aggiungiPuntoGrafico(bpm) {
     document.getElementById('statMed').innerText = 'Med: ' + med;
     document.getElementById('statMin').innerText = 'Min: ' + sessionMin;
 
-    // Colore punto
     const color = getBpmColor(bpm);
     bpmChart.data.datasets[0].pointBackgroundColor.push(color);
     bpmChart.data.datasets[0].pointBorderColor.push(color);
-
-    // Colore linea/area in base all'ultimo BPM
     bpmChart.data.datasets[0].borderColor = color;
     bpmChart.data.datasets[0].backgroundColor = getBpmBg(bpm);
-
     bpmChart.data.labels.push(campione);
     bpmChart.data.datasets[0].data.push(bpm);
 
@@ -233,94 +321,56 @@ function aggiungiPuntoGrafico(bpm) {
         bpmChart.data.datasets[0].pointBackgroundColor.shift();
         bpmChart.data.datasets[0].pointBorderColor.shift();
     }
-
     bpmChart.update();
 
-    // Animazione cuore
     const heart = document.getElementById('heartIcon');
     heart.classList.remove('beating');
-    void heart.offsetWidth; // reflow
+    void heart.offsetWidth;
     heart.classList.add('beating');
 }
 
-function resetGrafico() {
-    campione = 0;
-    sessionMax = sessionMin = null;
-    sessionSum = sessionCount = 0;
-    bpmChart.data.labels = [];
-    bpmChart.data.datasets[0].data = [];
-    bpmChart.data.datasets[0].pointBackgroundColor = [];
-    bpmChart.data.datasets[0].pointBorderColor = [];
-    bpmChart.data.datasets[0].borderColor = 'rgba(25,135,84,1)';
-    bpmChart.data.datasets[0].backgroundColor = 'rgba(25,135,84,0.15)';
-    bpmChart.update();
-    document.getElementById('chartStats').style.display = 'none';
-    document.getElementById('statMax').innerText = 'Max: --';
-    document.getElementById('statMed').innerText = 'Med: --';
-    document.getElementById('statMin').innerText = 'Min: --';
+// ── WATCHDOG ──
+let watchdogTimer = null;
+function resetWatchdog() {
+    clearTimeout(watchdogTimer);
+    watchdogTimer = setTimeout(() => {
+        document.getElementById("bpm").innerText = "---";
+        document.getElementById("timer").innerText = "connessione persa";
+        clearInterval(interval); interval = null;
+    }, 5000);
 }
 
-// ───── BPM LIVE ─────
+// ── BPM LIVE ──
 socket.on("bpm_live", function(data) {
-    document.getElementById("bpm").innerText = data.bpm > 0 ? data.bpm + " BPM" : "--- BPM";
+    resetWatchdog();
+    document.getElementById("bpm").innerText = data.bpm > 0 ? data.bpm : "---";
     document.getElementById("timer").innerText = data.stato;
     aggiungiPuntoGrafico(data.bpm);
 });
 
-// ───── RISULTATO FINALE ─────
-// DOPO
+// ── RISULTATO FINALE ──
 socket.on("misura_completata", function(data) {
+    clearTimeout(watchdogTimer);
     clearInterval(interval); interval = null;
 
-    // Usa i valori del grafico se disponibili, altrimenti quelli dell'ESP32
-    const max  = sessionMax  !== null ? sessionMax  : data.bpmMax;
-    const min  = sessionMin  !== null ? sessionMin  : data.bpmMin;
-    const med  = sessionCount > 0 ? Math.round(sessionSum / sessionCount) : data.bpmMedi;
+    const max = sessionMax !== null ? sessionMax : data.bpmMax;
+    const min = sessionMin !== null ? sessionMin : data.bpmMin;
+    const med = sessionCount > 0 ? Math.round(sessionSum / sessionCount) : data.bpmMedi;
 
     ultimaMisurazione = { bpm_max: max, bpm_medi: med, bpm_min: min };
-    document.getElementById("bpm").innerText = `Max: ${max} | Med: ${med} | Min: ${min}`;
+    document.getElementById("bpm").innerText = med;
+    document.getElementById("timer").innerText = "misurazione completata";
     document.getElementById("detMax").innerText  = max + " BPM";
     document.getElementById("detMedi").innerText = med + " BPM";
     document.getElementById("detMin").innerText  = min + " BPM";
     document.getElementById("resultDetails").classList.remove("d-none");
     checkBPM(max, med, min);
     document.getElementById("btnSalva").classList.remove("d-none");
+    document.getElementById("btnHome").classList.remove("d-none");
     document.getElementById("salvato").classList.add("d-none");
 });
 
-// ───── START ─────
-function start() {
-    ultimaMisurazione = null;
-    document.getElementById("btnSalva").classList.add("d-none");
-    document.getElementById("salvato").classList.add("d-none");
-    document.getElementById("resultDetails").classList.add("d-none");
-    document.getElementById("resultText").innerText = "Misurazione in corso...";
-    document.getElementById("resultStatus").innerText = "";
-    resetGrafico();
-    fetch("/web/avvia_misurazione", { method: "POST" });
-    timer = 0;
-    if (interval) clearInterval(interval);
-    interval = setInterval(() => {
-        timer++;
-        document.getElementById("timer").innerText = timer + "s";
-        if (timer >= 20) { clearInterval(interval); interval = null; }
-    }, 1000);
-}
-
-// ───── STOP ─────
-function stop() {
-    clearInterval(interval); interval = null;
-    document.getElementById("bpm").innerText = "--- BPM";
-    document.getElementById("timer").innerText = "--";
-    document.getElementById("btnSalva").classList.add("d-none");
-    document.getElementById("resultDetails").classList.add("d-none");
-    document.getElementById("resultText").innerText = "Avvia una misurazione per vedere il risultato.";
-    document.getElementById("resultStatus").innerText = "";
-    ultimaMisurazione = null;
-    resetGrafico();
-}
-
-// ───── SALVA ─────
+// ── SALVA ──
 function salva() {
     if (!ultimaMisurazione) { alert("Nessuna misurazione da salvare."); return; }
     fetch("/web/salva_misurazione", {
@@ -334,21 +384,15 @@ function salva() {
             document.getElementById("btnSalva").classList.add("d-none");
             document.getElementById("salvato").classList.remove("d-none");
         } else {
-            alert("Errore nel salvataggio: " + (data.error || "sconosciuto"));
+            alert("Errore: " + (data.error || "sconosciuto"));
         }
     })
     .catch(() => alert("Errore di rete."));
 }
 
-// ───── ANALISI BPM ─────
+// ── CHECK BPM ──
 function checkBPM(max, med, min) {
-    let text, status;
-    if (med >= 60 && med <= 100)    { text = "Battito nella norma";  status = "🟢 NORMALE"; }
-    else if (med < 60)              { text = "Battito troppo basso"; status = "🟡 ATTENZIONE"; }
-    else                            { text = "Battito troppo alto";  status = "🔴 CRITICO"; }
-    document.getElementById("resultText").innerText = text;
-    document.getElementById("resultStatus").innerText = status;
+    // La legenda è fissa nella card destra, nessun elemento dinamico da aggiornare
 }
 </script>
-
 {% endblock %}

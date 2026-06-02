@@ -6,9 +6,10 @@ from machine import I2C, Pin
 from max30102 import MAX30102
 
 # ── CONFIGURAZIONE ─────────────────────────────────────────────────────────────
-FLASK_URL = "http://192.168.5.47:5000"
+# FLASK_URL = "http://192.168.5.47:5000"
+FLASK_URL = "http://192.168.1.32:5000"
 
-API_TOKEN = "d92baab3783de78e8ab16e664d533e95508b36d877473347a4b4a756924b74d4"
+API_TOKEN = "fd67dc813804cec44189906a6f75bd90a2f7219a8a915b224382cef0fe3cf6a0"
 
 HEADERS = {
     "Content-Type": "application/json",
@@ -50,35 +51,6 @@ def invia_bpm_live(bpm, stato="misurazione in corso..."):
 
     except Exception as e:
         print("Errore BPM live:", e)
-
-
-# def invia_risultato(bpm_medi, bpm_max, bpm_min):
-#     try:
-#         # Forza interi puri con // per evitare float nel JSON su MicroPython
-#         payload = ujson.dumps({
-#             "bpm_medi": bpm_medi // 1,
-#             "bpm_max":  bpm_max  // 1,
-#             "bpm_min":  bpm_min  // 1,
-#         })
-
-#         print("Invio payload:", payload)
-
-#         r = urequests.post(
-#             FLASK_URL + "/api/misura",
-#             data=payload,
-#             headers=HEADERS
-#         )
-
-#         data = r.json()
-#         r.close()
-
-#         if data.get("ok"):
-#             print("Risultato salvato!")
-#         else:
-#             print("Errore server:", data)
-
-#     except Exception as e:
-#         print("Errore invio risultato:", e)
 
 
 def invia_risultato(bpm_medi, bpm_max, bpm_min):

@@ -1,6 +1,7 @@
 import os
 import threading
 import time
+from zoneinfo import ZoneInfo
 from flask import Flask, render_template, request, redirect, url_for, session, g, jsonify
 from flask_socketio import SocketIO, join_room
 
@@ -114,13 +115,15 @@ def cronologia():
     with SessionLocal() as db:
         misurazioni = Misurazione.get_by_user(db, g.user.id)
 
+    tz_italia = ZoneInfo("Europe/Rome")
+
     history = [
         {
             "id": m.id,
             "bpmMedi": m.bpmMedi,
             "bpmMax": m.bpmMax,
             "bpmMin": m.bpmMin,
-            "data": m.data,
+            "data": m.data.astimezone(tz_italia),  # ← UTC → ora italiana
         }
         for m in misurazioni
     ]
@@ -140,7 +143,7 @@ def delete_misurazione(id_misurazione):
         m = db.execute(
             select(Misurazione).where(
                 Misurazione.id == id_misurazione,
-                Misurazione.user_id == g.user.id   # sicurezza: solo il proprietario
+                Misurazione.user_id == g.user.id
             )
         ).scalars().first()
 
@@ -161,7 +164,7 @@ def profilo():
         "misurazione/profilo.html",
         username=g.user.username,
         user=g.user,
-        api_token=g.user.api_token   # FIX: era mancante
+        api_token=g.user.api_token
     )
 
 # ─────────────────────────────
