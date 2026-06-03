@@ -29,20 +29,20 @@
                     </div>
                     <div class="d-flex flex-column">
                         <span class="fw-bold text-capitalize" style="font-size: 0.95rem; color: #f5f5f5;">{{ username|lower }}</span>
-                        <span style="font-size: 0.75rem; color: white;">🕒 {{ event.data.strftime('%d/%m/%Y - %H:%M') }}</span>
+                        <span style="font-size: 0.75rem; color: white;"> {{ event.data.strftime('%d/%m/%Y - %H:%M') }}</span>
                     </div>
                 </div>
 
                 <!-- Pillole metriche -->
                 <div class="d-flex gap-2 flex-wrap mb-3">
                     <span class="badge d-inline-flex align-items-center gap-1 border border-danger-subtle px-2 py-1 rounded-pill font-monospace" style="background-color: #2c2020; color: #ff6b6b; font-size: 0.75rem;">
-                        ♡ Max: {{ event.bpmMax }}
+                        Max: {{ event.bpmMax }}
                     </span>
                     <span class="badge d-inline-flex align-items-center gap-1 border border-primary-subtle px-2 py-1 rounded-pill font-monospace" style="background-color: #202633; color: #4dadff; font-size: 0.75rem;">
-                        ♡ Medio: {{ event.bpmMedi }}
+                        Medio: {{ event.bpmMedi }}
                     </span>
                     <span class="badge d-inline-flex align-items-center gap-1 border border-success-subtle px-2 py-1 rounded-pill font-monospace" style="background-color: #1d2b22; color: #51cf66; font-size: 0.75rem;">
-                        ♡ Min: {{ event.bpmMin }}
+                        Min: {{ event.bpmMin }}
                     </span>
                 </div>
 
@@ -50,7 +50,7 @@
                 <div class="pt-2 border-top border-secondary border-opacity-10">
                     <form method="POST" action="{{ url_for('delete_misurazione', id_misurazione=event.id) }}" class="m-0">
                         <button type="submit" class="btn btn-sm bg-transparent border-0 px-1 d-inline-flex align-items-center gap-1" style="font-size: 0.85rem; color: white;">
-                            🗑️ Elimina
+                            Elimina
                         </button>
                     </form>
                 </div>
