@@ -16,7 +16,7 @@
             --muted:   #6b7280;
         }
 
-    /* ── BPM DISPLAY ── */
+    /* BPM DISPLAY */
     .bpm-display {
         font-size: 3.5rem;
         font-weight: 700;
@@ -37,7 +37,7 @@
         font-family: 'DM Mono', monospace;
     }
 
-    /* ── BOTTONI ── */
+    /* BOTTONI */
     .btn-save {
         background: var(--red);
         color: #fff;
@@ -70,7 +70,7 @@
         color: var(--text);
     }
 
-    /* ── RESULT CARD ── */
+    /* RESULT CARD */
     .status-pill {
         display: inline-flex;
         align-items: center;
@@ -96,7 +96,7 @@
     .metric-label { color: var(--muted); }
     .metric-val   { font-family: 'DM Mono', monospace; font-weight: 600; }
 
-    /* ── CHART CARD ── */
+    /* CHART CARD */
     .chart-legend span {
         font-size: 0.78rem;
         color: var(--muted);
@@ -110,7 +110,7 @@
         font-weight: 600;
     }
 
-    /* ── HEARTBEAT ANIM ── */
+    /* HEARTBEAT ANIM */
     @keyframes heartbeat {
         0%,100% { transform: scale(1); }
         15%      { transform: scale(1.35); }
@@ -120,7 +120,7 @@
     }
     .beating { animation: heartbeat 0.8s ease-in-out; }
 
-    /* ── ALERT SALVATO ── */
+    /* ALERT SALVATO */
     .alert-saved {
         background: rgba(52,208,127,0.1);
         border: 1px solid rgba(52,208,127,0.3);
@@ -200,7 +200,7 @@ socket.emit("join", { user_id: "{{ g.user.id }}" });
 
 let interval = null;
 
-// ── CHART ──
+// CHART
 const MAX_PUNTI = 30;
 const ctx = document.getElementById('bpmChart').getContext('2d');
 
@@ -319,7 +319,7 @@ function aggiungiPuntoGrafico(bpm) {
     heart.classList.add('beating');
 }
 
-// ── WATCHDOG ──
+// WATCHDOG
 let watchdogTimer = null;
 function resetWatchdog() {
     clearTimeout(watchdogTimer);
@@ -330,7 +330,7 @@ function resetWatchdog() {
     }, 5000);
 }
 
-// ── BPM LIVE ──
+//BPM LIVE
 socket.on("bpm_live", function(data) {
     resetWatchdog();
     document.getElementById("bpm").innerText = data.bpm > 0 ? data.bpm : "---";
@@ -338,7 +338,7 @@ socket.on("bpm_live", function(data) {
     aggiungiPuntoGrafico(data.bpm);
 });
 
-// ── RISULTATO FINALE ──
+// RISULTATO FINALE
 socket.on("misura_completata", function(data) {
     clearTimeout(watchdogTimer);
     clearInterval(interval); interval = null;
@@ -361,7 +361,7 @@ socket.on("misura_completata", function(data) {
     document.getElementById("salvato").classList.add("d-none");
 });
 
-// ── SALVA ──
+// SALVA
 function salva() {
     if (!ultimaMisurazione) { alert("Nessuna misurazione da salvare."); return; }
     fetch("/web/salva_misurazione", {
@@ -381,9 +381,8 @@ function salva() {
     .catch(() => alert("Errore di rete."));
 }
 
-// ── CHECK BPM ──
+//CHECK BPM 
 function checkBPM(max, med, min) {
-    // La legenda è fissa nella card destra, nessun elemento dinamico da aggiornare
 }
 </script>
 {% endblock %}

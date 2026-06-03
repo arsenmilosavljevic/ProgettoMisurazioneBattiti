@@ -13,9 +13,7 @@ from db.models.misurazione import Misurazione
 
 from auth import bp as auth_bp
 
-# ─────────────────────────────
-# APP INIT
-# ─────────────────────────────
+# region APP INIT
 
 app = Flask(
     __name__,
@@ -32,9 +30,7 @@ app.register_blueprint(auth_bp)
 with app.app_context():
     Base.metadata.create_all(bind=engine)
 
-# ─────────────────────────────
-# COMANDI ESP32
-# ─────────────────────────────
+# region COMANDI ESP32
 
 _comandi = {}
 _lock = threading.Lock()
@@ -50,9 +46,7 @@ def get_e_reset_comando(user_id):
             _comandi[user_id] = "idle"
         return cmd
 
-# ─────────────────────────────
-# AUTH ESP32 TOKEN
-# ─────────────────────────────
+# region AUTH ESP32 TOKEN
 
 def autentica_token():
     auth = request.headers.get("Authorization", "")
@@ -64,9 +58,7 @@ def autentica_token():
     with SessionLocal() as db:
         return User.get_by_token(db, token)
 
-# ─────────────────────────────
-# SESSION USER
-# ─────────────────────────────
+# region SESSION USER
 
 @app.before_request
 def load_user():
@@ -77,17 +69,13 @@ def load_user():
     else:
         g.user = None
 
-# ─────────────────────────────
-# SOCKET
-# ─────────────────────────────
+# region SOCKET
 
 @socketio.on("join")
 def on_join(data):
     join_room(str(data.get("user_id")))
 
-# ─────────────────────────────
-# ROUTES BASE
-# ─────────────────────────────
+# region ROUTES BASE
 
 @app.route("/")
 def index():
@@ -105,9 +93,7 @@ def homepage():
         user_id=g.user.id
     )
 
-# ─────────────────────────────
-# CRONOLOGIA
-# ─────────────────────────────
+# region CRONOLOGIA
 
 @app.route("/cronologia")
 @login_required
@@ -153,9 +139,7 @@ def delete_misurazione(id_misurazione):
 
     return redirect(url_for("cronologia"))
 
-# ─────────────────────────────
-# PROFILO
-# ─────────────────────────────
+# region PROFILO
 
 @app.route("/profilo")
 @login_required
@@ -167,9 +151,7 @@ def profilo():
         api_token=g.user.api_token
     )
 
-# ─────────────────────────────
-# ESP32 API
-# ─────────────────────────────
+# region ESP32 API
 
 @app.route("/web/avvia_misurazione", methods=["POST"])
 @login_required
@@ -193,9 +175,7 @@ def comando():
 
     return jsonify({"comando": get_e_reset_comando(user.id)})
 
-# ─────────────────────────────
-# BPM LIVE
-# ─────────────────────────────
+# region BPM LIVE
 
 @app.route("/api/bpm_live", methods=["POST"])
 def bpm_live():
@@ -240,9 +220,7 @@ def misura():
 
     return jsonify({"ok": True})
 
-# ─────────────────────────────
-# SALVA MISURAZIONE (da web)
-# ─────────────────────────────
+# region SALVA MISURAZIONE 
 
 @app.route("/web/salva_misurazione", methods=["POST"])
 @login_required
@@ -266,9 +244,7 @@ def salva_misurazione():
     return jsonify({"ok": True})
 
 
-# ─────────────────────────────
-# RUN
-# ─────────────────────────────
+# region RUN
 
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=5000, debug=True)
