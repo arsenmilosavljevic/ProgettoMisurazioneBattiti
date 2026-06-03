@@ -1,4 +1,4 @@
-# db/engine.py
+# flaskr/db/engine.py
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
