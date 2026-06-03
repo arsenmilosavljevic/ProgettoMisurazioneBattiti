@@ -1,4 +1,4 @@
-# db/models/user.py
+# flaskr/db/models/user.py
 import secrets
 from typing import TYPE_CHECKING
 from ..base import Base, SessionLocal

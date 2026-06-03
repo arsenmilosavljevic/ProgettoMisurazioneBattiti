@@ -1,4 +1,4 @@
-# db/models/misurazione.py
+# flaskr/db/models/misurazione.py
 from typing import TYPE_CHECKING
 from ..base import Base
 from sqlalchemy import Integer, DateTime, ForeignKey, select, desc

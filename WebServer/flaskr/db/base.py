@@ -1,4 +1,4 @@
-# db/base.py
+# flaskr/db/base.py
 import uuid
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import String, inspect
