@@ -236,7 +236,7 @@ const bpmChart = new Chart(ctx, {
         animation: { duration: 350 },
         scales: {
             x: {
-                title: { display: true, text: 'Campioni', color: '#9ca3af' },
+                title: { display: true, text: 'Tempo', color: '#9ca3af' },
                 grid:  { color: 'rgba(0,0,0,0.06)' },
                 ticks: { color: '#9ca3af' }
             },
@@ -268,12 +268,10 @@ const bpmChart = new Chart(ctx, {
                     lineMin: {
                         type: 'line', yMin: 60, yMax: 60,
                         borderColor: 'rgba(52,208,127,0.4)', borderWidth: 1.5, borderDash: [6,4],
-                        label: { display: true, content: '60 BPM', position: 'start', color: 'rgba(52,208,127,0.7)', font: { size: 10 }, backgroundColor: 'transparent' }
                     },
                     lineMax: {
                         type: 'line', yMin: 100, yMax: 100,
                         borderColor: 'rgba(232,57,77,0.4)', borderWidth: 1.5, borderDash: [6,4],
-                        label: { display: true, content: '100 BPM', position: 'start', color: 'rgba(232,57,77,0.7)', font: { size: 10 }, backgroundColor: 'transparent' }
                     }
                 }
             }
