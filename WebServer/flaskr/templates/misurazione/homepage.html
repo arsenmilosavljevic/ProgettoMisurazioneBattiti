@@ -236,15 +236,15 @@ const bpmChart = new Chart(ctx, {
         animation: { duration: 350 },
         scales: {
             x: {
-                title: { display: true, text: 'Tempo', color: '#9ca3af' },
-                grid:  { color: 'rgba(0,0,0,0.06)' },
-                ticks: { color: '#9ca3af' }
+                title: { display: true, text: 'Tempo', color: '#000000' },
+                grid:  { color: 'rgba(0, 0, 0, 0.21)' },
+                ticks: { color: '#000000' }
             },
             y: {
                 min: 35, max: 185,
-                title: { display: true, text: 'BPM', color: '#9ca3af' },
-                ticks: { stepSize: 20, color: '#9ca3af' },
-                grid:  { color: 'rgba(0,0,0,0.06)' }
+                title: { display: true, text: 'BPM', color: '#000000' },
+                ticks: { stepSize: 20, color: '#000000' },
+                grid:  { color: 'rgba(0,0,0,0.21)' }
             }
         },
         plugins: {
@@ -254,7 +254,7 @@ const bpmChart = new Chart(ctx, {
                 borderColor: 'rgba(0,0,0,0.1)',
                 borderWidth: 1,
                 titleColor: '#111827',
-                bodyColor: '#6b7280',
+                bodyColor: '#000000',
                 callbacks: {
                     label: c => {
                         const v = c.parsed.y;
@@ -267,11 +267,11 @@ const bpmChart = new Chart(ctx, {
                 annotations: {
                     lineMin: {
                         type: 'line', yMin: 60, yMax: 60,
-                        borderColor: 'rgba(52,208,127,0.4)', borderWidth: 1.5, borderDash: [6,4],
+                        borderColor: 'rgba(31, 179, 102, 0.72)', borderWidth: 1.5, borderDash: [6,4],
                     },
                     lineMax: {
                         type: 'line', yMin: 100, yMax: 100,
-                        borderColor: 'rgba(232,57,77,0.4)', borderWidth: 1.5, borderDash: [6,4],
+                        borderColor: 'rgba(202, 17, 39, 0.77)', borderWidth: 1.5, borderDash: [6,4],
                     }
                 }
             }

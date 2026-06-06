@@ -6,8 +6,8 @@ from machine import I2C, Pin
 from max30102 import MAX30102
 
 # region CONFIGURAZIONE
-# FLASK_URL = "http://192.168.5.47:5000"
-FLASK_URL = "http://192.168.5.25:5000"
+
+FLASK_URL = "http://192.168.1.36:5000"
 
 API_TOKEN = "fd67dc813804cec44189906a6f75bd90a2f7219a8a915b224382cef0fe3cf6a0"
 

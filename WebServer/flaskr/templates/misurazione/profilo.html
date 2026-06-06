@@ -48,9 +48,42 @@
 <script>
 function copiaToken() {
     const input = document.getElementById('tokenInput');
-    navigator.clipboard.writeText(input.value).then(() => {
-        alert('Token copiato!');
-    });
+    const btn = document.querySelector('button[onclick="copiaToken()"]');
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(input.value).then(() => {
+            mostraCopiato(btn);
+        }).catch(() => fallbackCopia(input, btn));
+    } else {
+        fallbackCopia(input, btn);
+    }
+}
+
+function fallbackCopia(input, btn) {
+    input.removeAttribute('readonly');
+    input.select();
+    input.setSelectionRange(0, 99999);
+    try {
+        document.execCommand('copy');
+        mostraCopiato(btn);
+    } catch(e) {
+        alert('Copia manuale: ' + input.value);
+    }
+    input.setAttribute('readonly', true);
+    window.getSelection().removeAllRanges();
+}
+
+function mostraCopiato(btn) {
+    const testo = btn.innerText;
+    btn.innerText = '✓ Copiato!';
+    btn.classList.add('btn-success');
+    btn.classList.remove('btn-outline-secondary');
+    setTimeout(() => {
+        btn.innerText = testo;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-secondary');
+    }, 2000);
 }
 </script>
+
 {% endblock %}
