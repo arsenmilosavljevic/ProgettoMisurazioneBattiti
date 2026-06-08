@@ -17,7 +17,7 @@
             --blue:      #3b82f6;
             --green:     #22c55e;
             --text:      #000000;
-            --muted:     #000000;
+            --muted:     #6b7280;
             --font:      'DM Sans', sans-serif;
             --mono:      'DM Mono', monospace;
         }
@@ -30,17 +30,12 @@
             font-family: var(--font);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
         }
 
         @keyframes pulse {
             0%, 100% { transform: scale(1); opacity: 1; }
             50%       { transform: scale(1.2); opacity: 0.8; }
-        }
-
-        /* ── LAYOUT ── */
-        body {
-            flex-direction: row !important;
         }
 
         /* ── SIDEBAR ── */
