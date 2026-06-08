@@ -8,6 +8,9 @@
 <div class="row justify-content-center">
     <div class="col-md-5">
         <div class="card shadow-sm p-4">
+            {% if show_modal %}
+            <div class="alert alert-danger">{{ show_modal }}</div>
+            {% endif %}
             <form method="post" class="d-flex flex-column">
                 <div class="mb-3">
                     <label for="username" class="form-label">Username</label>
@@ -17,44 +20,9 @@
                     <label for="password" class="form-label">Password</label>
                     <input type="password" name="password" id="password" class="form-control" required>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Login</button>
+                <button type="submit" class="btn btn-danger w-100">Login</button>
             </form>
         </div>
     </div>
 </div>
-<!-- Modal Bootstrap -->
-<div class="modal fade" id="modalParametro" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Errore</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        {% if show_modal %}
-        {{ show_modal }}
-        {% else %}
-        Nessun messaggio.
-        {% endif %}
-      </div>
-    </div>
-  </div>
-</div>
-
-{% if show_modal %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    try {
-        var modalEl = document.getElementById('modalParametro');
-        if (modalEl) {
-            var myModal = new bootstrap.Modal(modalEl);
-            myModal.show();
-        }
-    } catch (e) {
-        console.error("Errore nel mostrare il modal:", e);
-    }
-});
-</script>
-{% endif %}
 {% endblock %}
-
